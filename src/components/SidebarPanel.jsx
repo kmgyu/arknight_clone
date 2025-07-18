@@ -4,12 +4,14 @@ function SidebarPanel({ node, onClose }) {
   if (!node) return null;
 
   return (
-    <div className={`sidebar-panel ${node ? 'open' : ''}`}>
-      <div className="flex justify-between items-center mb-4">
+    <div className={`fixed top-0 right-0 w-80 h-screen bg-gray-800 text-white p-6 z-50 shadow-2xl transform transition-transform duration-300 ease-in-out overflow-y-auto ${
+      node ? 'translate-x-0' : 'translate-x-full'
+    }`}>
+      <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-bold">{node.label}</h2>
         <button 
           onClick={onClose}
-          className="text-gray-400 hover:text-white transition-colors"
+          className="text-gray-400 hover:text-white transition-colors duration-200"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -17,14 +19,14 @@ function SidebarPanel({ node, onClose }) {
         </button>
       </div>
       
-      <div className="space-y-4">
+      <div className="space-y-6">
         <div>
           <h3 className="text-sm font-semibold text-gray-300 mb-2">유형</h3>
           <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
             node.type === 'COMBAT' ? 'bg-gray-600 text-white' :
-            node.type === 'ENCOUNTER' ? 'bg-blue-600 text-white' :
+            node.type === 'ENCOUNTER' ? 'bg-green-600 text-white' :
             node.type === 'EMERGENCY' ? 'bg-red-600 text-white' :
-            'bg-green-600 text-white'
+            'bg-green-700 text-white'
           }`}>
             {node.type}
           </span>
@@ -32,7 +34,7 @@ function SidebarPanel({ node, onClose }) {
         
         <div>
           <h3 className="text-sm font-semibold text-gray-300 mb-2">레벨</h3>
-          <p className="text-lg font-mono">{node.level}</p>
+          <p className="text-lg font-mono text-blue-400">{node.level}</p>
         </div>
         
         <div>
@@ -47,7 +49,7 @@ function SidebarPanel({ node, onClose }) {
         
         <div>
           <h3 className="text-sm font-semibold text-gray-300 mb-2">노드 ID</h3>
-          <code className="text-sm bg-gray-700 px-2 py-1 rounded">{node.id}</code>
+          <code className="text-sm bg-gray-700 px-2 py-1 rounded text-green-400">{node.id}</code>
         </div>
       </div>
     </div>

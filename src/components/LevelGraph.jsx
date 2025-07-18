@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import LevelNode from './LevelNode';
-import '../styles/graph.css';
 
 // 레벨 정보가 추가된 노드 목록
 const nodes = [
@@ -78,7 +77,7 @@ function LevelGraph({ selectedNode, onNodeSelect }) {
           y1={fromRect.top - containerRect.top + fromRect.height / 2}
           x2={toRect.left - containerRect.left + toRect.width / 2}
           y2={toRect.top - containerRect.top + toRect.height / 2}
-          stroke="#aaa"
+          stroke="#9CA3AF"
           strokeWidth="2"
           markerEnd="url(#arrow)"
         />
@@ -88,9 +87,13 @@ function LevelGraph({ selectedNode, onNodeSelect }) {
   };
 
   return (
-    <div className="graph-container" ref={containerRef}>
+    <div className="relative w-full h-full bg-gray-900 overflow-hidden flex flex-row z-0" ref={containerRef}>
       {/* SVG 라인 */}
-      <svg className="graph-lines" width={dimensions.width} height={dimensions.height}>
+      <svg 
+        className="absolute top-0 left-0 w-full h-full pointer-events-none z-10" 
+        width={dimensions.width} 
+        height={dimensions.height}
+      >
         <defs>
           <marker 
             id="arrow" 
@@ -101,14 +104,14 @@ function LevelGraph({ selectedNode, onNodeSelect }) {
             orient="auto" 
             markerUnits="strokeWidth"
           >
-            <path d="M0,0 L10,5 L0,10 Z" fill="#aaa" />
+            <path d="M0,0 L10,5 L0,10 Z" fill="#9CA3AF" />
           </marker>
         </defs>
         {dimensions.width > 0 && drawLines()}
       </svg>
 
       {/* 노드들 */}
-      <div className="graph-levels">
+      <div className="flex flex-row w-full h-full z-20">
         {levels.map(level => {
           const nodesInLevel = levelGroups[level];
           const nodesCount = nodesInLevel.length;
@@ -116,22 +119,24 @@ function LevelGraph({ selectedNode, onNodeSelect }) {
           return (
             <div 
               key={level} 
-              className="graph-level"
+              className="flex flex-col justify-start items-center border-r border-gray-600 relative"
               style={{
                 width: `${100 / totalLevels}%`,
                 height: '100%'
               }}
             >
+              {/* 레벨 구분선 */}
+              <div className="absolute top-0 left-1/2 w-0.5 h-5 bg-gray-500 transform -translate-x-1/2"></div>
+              
               {nodesInLevel.map((node, index) => (
                 <div 
                   key={node.id} 
-                  className="node-wrapper"
+                  className="flex justify-center items-center w-full"
                   style={{
-                    height: `${100 / nodesCount}%`,
-                    width: '100%'
+                    height: `${100 / nodesCount}%`
                   }}
                 >
-                  <div className="node-container">
+                  <div className="flex justify-center items-center w-full h-full">
                     <LevelNode
                       node={node}
                       id={`node-${node.id}`}
