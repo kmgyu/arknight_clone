@@ -1,6 +1,7 @@
 # integrated strategies Clone Coding Project
 React + Vite
 
+
 # structure
 ```
 src/

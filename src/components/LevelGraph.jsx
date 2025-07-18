@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import LevelNode from './LevelNode';
-import SidebarPanel from './SidebarPanel';
 import '../styles/graph.css';
 
 // 레벨 정보가 추가된 노드 목록
@@ -19,8 +18,7 @@ const edges = [
   ['combat2', 'emergency'],
 ];
 
-function LevelGraph() {
-  const [selectedNode, setSelectedNode] = useState(null);
+function LevelGraph({ selectedNode, onNodeSelect }) {
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const containerRef = useRef(null);
 
@@ -137,7 +135,7 @@ function LevelGraph() {
                     <LevelNode
                       node={node}
                       id={`node-${node.id}`}
-                      onClick={() => setSelectedNode(node)}
+                      onClick={() => onNodeSelect(node)}
                       style={{
                         width: `${nodeSize.width}px`,
                         height: `${nodeSize.height}px`,
@@ -151,8 +149,6 @@ function LevelGraph() {
           );
         })}
       </div>
-
-      <SidebarPanel node={selectedNode} onClose={() => setSelectedNode(null)} />
     </div>
   );
 }
