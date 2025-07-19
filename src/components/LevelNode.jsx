@@ -7,13 +7,15 @@ function LevelNode({ node, id, onClick, style }) {
     
     switch (type) {
       case 'COMBAT':
-        return `${baseClasses} bg-gray-700 hover:border-blue-400 hover:shadow-lg hover:shadow-blue-400/30`;
+        return `${baseClasses} bg-gray-700 hover:border-gray-200 hover:shadow-lg hover:shadow-gray-400/30`;
       case 'ENCOUNTER':
-        return `${baseClasses} bg-sky-400 hover:border-green-400 hover:shadow-lg hover:shadow-green-400/30`;
+        return `${baseClasses} bg-sky-400 hover:border-sky-200 hover:shadow-lg hover:shadow-sky-400/30`;
       case 'EMERGENCY':
         return `${baseClasses} bg-red-800 hover:border-red-400 hover:shadow-lg hover:shadow-red-400/30`;
       case 'ROLL':
         return `${baseClasses} bg-green-700 hover:border-green-400 hover:shadow-lg hover:shadow-green-400/30`;
+      case 'SAFE':
+        return `${baseClasses} bg-blue-600 hover:border-blue-400 hover:shadow-lg hover:shadow-green-400/30`;
       default:
         return `${baseClasses} bg-gray-700 hover:border-blue-400 hover:shadow-lg hover:shadow-blue-400/30`;
     }
