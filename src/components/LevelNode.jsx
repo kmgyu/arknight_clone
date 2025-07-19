@@ -9,7 +9,7 @@ function LevelNode({ node, id, onClick, style }) {
       case 'COMBAT':
         return `${baseClasses} bg-gray-700 hover:border-blue-400 hover:shadow-lg hover:shadow-blue-400/30`;
       case 'ENCOUNTER':
-        return `${baseClasses} bg-gray-600 hover:border-green-400 hover:shadow-lg hover:shadow-green-400/30`;
+        return `${baseClasses} bg-sky-400 hover:border-green-400 hover:shadow-lg hover:shadow-green-400/30`;
       case 'EMERGENCY':
         return `${baseClasses} bg-red-800 hover:border-red-400 hover:shadow-lg hover:shadow-red-400/30`;
       case 'ROLL':

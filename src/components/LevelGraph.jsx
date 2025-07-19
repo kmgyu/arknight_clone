@@ -3,18 +3,29 @@ import LevelNode from './LevelNode';
 
 // 레벨 정보가 추가된 노드 목록
 const nodes = [
-  { id: 'start', label: '막간의 여흥', type: 'ROLL', level: 0 },
-  { id: 'combat1', label: '작전', type: 'COMBAT', level: 1 },
-  { id: 'combat2', label: '작전', type: 'COMBAT', level: 2 },
-  { id: 'meet', label: '우연한 만남', type: 'ENCOUNTER', level: 3 },
-  { id: 'emergency', label: '긴급 작전', type: 'EMERGENCY', level: 3 },
+  { id: '0n1', label: '막간의 여흥', type: 'ROLL', level: 0 },
+  { id: '1n1', label: '작전', type: 'COMBAT', level: 1 },
+  { id: '2n1', label: '작전', type: 'COMBAT', level: 2 },
+  { id: '2n2', label: '작전', type: 'COMBAT', level: 2 },
+  { id: '3n1', label: '우연한 만남', type: 'ENCOUNTER', level: 3 },
+  { id: '3n2', label: '긴급 작전', type: 'EMERGENCY', level: 3 },
+  { id: '3n3', label: '긴급 작전', type: 'EMERGENCY', level: 3 },
+  { id: '4n1', label: '작전', type: 'COMBAT', level: 4 },
+  { id: '5n1', label: '긴급 작전', type: 'EMERGENCY', level: 5 },
 ];
 
 const edges = [
-  ['start', 'combat1'],
-  ['combat1', 'combat2'],
-  ['combat2', 'meet'],
-  ['combat2', 'emergency'],
+  ['0n1', '1n1'],
+  ['1n1', '2n1'],
+  ['1n1', '2n2'],
+  ['2n1', '3n1'],
+  ['2n1', '3n2'],
+  ['2n2', '3n2'],
+  ['2n2', '3n3'],
+  ['3n1', '4n1'],
+  ['3n2', '4n1'],
+  ['3n3', '4n1'],
+  ['4n1', '5n1'],
 ];
 
 function LevelGraph({ selectedNode, onNodeSelect }) {
