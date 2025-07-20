@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import LevelGraph from '../components/LevelGraph';
-import SidebarPanel from '../components/SidebarPanel';
+import LevelGraph from '@/components/LevelGraph';
+import SidebarPanel from '@/components/SidebarPanel';
 
 function Scenario() {
   const [selectedNode, setSelectedNode] = useState(null);
