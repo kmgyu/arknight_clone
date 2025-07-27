@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import LevelNode from '@/components/LevelNode';
+import LevelNode from '@/components/floor/LevelNode';
 import { generateDAGGraph } from '@/utils/graphGenerator.js';
 
 const { nodes, edges } = generateDAGGraph(5, 4);
