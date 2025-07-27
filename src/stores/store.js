@@ -1,6 +1,6 @@
 // src/store.js
 import { configureStore } from '@reduxjs/toolkit';
-import resourceReducer from '@/features/resources/resourceSlice';
+import resourceReducer from '@/stores/slices/resourceSlice';
 
 const store = configureStore({
   reducer: {

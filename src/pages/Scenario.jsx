@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import LevelGraph from '@/components/LevelGraph';
 import SidebarPanel from '@/components/SidebarPanel';
-import ResourceHUD from '@/features/resources/ResourceHUD';
+import ResourceHUD from '@/components/resources/ResourceHUD';
 
 function Scenario() {
   const [selectedNode, setSelectedNode] = useState(null);

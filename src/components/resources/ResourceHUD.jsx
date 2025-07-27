@@ -1,7 +1,6 @@
-// src/features/resources/ResourceHUD.jsx
 import React from 'react';
 import { useSelector } from 'react-redux';
-import { selectGameResources, selectUserResources } from '@/features/resources/resourceSelectors';
+import { selectGameResources, selectUserResources } from '@/hooks/resourceSelectors';
 
 const ResourceHUD = () => {
   const game = useSelector(selectGameResources);
