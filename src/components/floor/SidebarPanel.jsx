@@ -39,12 +39,13 @@ function SidebarPanel({ node, onClose }) {
         
         <div>
           <h3 className="text-sm font-semibold text-gray-300 mb-2">설명</h3>
-          <p className="text-gray-100 leading-relaxed">
+          {/* <p className="text-gray-100 leading-relaxed">
             {node.type === 'COMBAT' && '전투 작전을 수행하는 단계입니다.'}
             {node.type === 'ENCOUNTER' && '예상치 못한 상황과 조우하는 단계입니다.'}
             {node.type === 'EMERGENCY' && '긴급 상황에 대응하는 단계입니다.'}
             {node.type === 'ROLL' && '막간의 여흥이나 휴식을 취하는 단계입니다.'}
-          </p>
+          </p> */}
+          <node.content />
         </div>
         
         <div>

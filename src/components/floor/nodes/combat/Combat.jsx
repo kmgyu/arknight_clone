@@ -9,7 +9,6 @@ function Combat() {
     const idx = Math.floor(Math.random() * combats.length);
     return combats[idx];
   }, []);
-
   return <Selected />;
 }
 
