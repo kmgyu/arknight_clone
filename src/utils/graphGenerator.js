@@ -1,8 +1,10 @@
+import getNodeContentComponent from "@/utils/getNodeContentComponent";
 
 const typePool = ['COMBAT', // 작전
                   'EMERGENCY', // 긴급 작전
                   'ROLL', // 막간의 여흥, 흥미진진
                   'ENCOUNTER', // 우연한 만남
+                  'SAFE', // 안전한 곳
                 ];
 
 /**
@@ -24,8 +26,9 @@ export function generateDAGGraph(maxLevel = 5, maxNodesPerLevel = 4) {
       const id = `${level}n${i + 1}`;
       const label = isBossLevel ? '보스' : `레벨 ${level}`;
       const type = typePool[Math.floor(Math.random() * typePool.length)];
-
-      nodes.push({ id, label, type, level });
+      const content = getNodeContentComponent(type);
+      
+      nodes.push({ id, label, type, level, content });
     }
   }
 
