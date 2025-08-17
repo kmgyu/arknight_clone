@@ -1,6 +1,10 @@
 # integrated strategies Clone Coding Project
-React + Vite
+명일방주 통합전략을 모방하는 토이 프로젝트입니다.
 
+# stack
+react
+vite
+tailwindcss
 
 # structure
 ```
