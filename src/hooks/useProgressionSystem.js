@@ -34,26 +34,29 @@ export const useProgressionSystem = (nodes, edges, options = {}) => {
     }
   }, [autoLoad]);
 
-  // 사용 가능한 노드 계산
+  // 현재 진행 중인 레벨 계산
+  const getCurrentLevel = useCallback(() => {
+    if (completedNodes.size === 0) return 0;
+    
+    const completedLevels = Array.from(completedNodes)
+      .map(nodeId => nodes.find(n => n.id === nodeId)?.level)
+      .filter(level => level !== undefined);
+    
+    return completedLevels.length > 0 ? Math.max(...completedLevels) + 1 : 0;
+  }, [completedNodes, nodes]);
+
+  // 사용 가능한 노드 계산 (현재 레벨의 노드들만)
   const updateAvailableNodes = useCallback(() => {
     const available = new Set();
+    const currentLevelNum = getCurrentLevel();
     
-    // 레벨 0의 모든 노드는 항상 사용 가능
+    // 현재 레벨의 모든 노드가 사용 가능
     nodes
-      .filter(node => node.level === 0)
+      .filter(node => node.level === currentLevelNum)
       .forEach(node => available.add(node.id));
 
-    // 완료된 노드와 연결된 다음 레벨 노드들을 사용 가능하게 설정
-    completedNodes.forEach(completedNodeId => {
-      edges.forEach(([fromId, toId]) => {
-        if (fromId === completedNodeId) {
-          available.add(toId);
-        }
-      });
-    });
-
     setAvailableNodes(available);
-  }, [nodes, edges, completedNodes]);
+  }, [nodes, getCurrentLevel]);
 
   // 사용 가능한 노드 업데이트
   useEffect(() => {
@@ -90,9 +93,12 @@ export const useProgressionSystem = (nodes, edges, options = {}) => {
       return false;
     }
 
+    const node = nodes.find(n => n.id === nodeId);
+    const isBossNode = node?.type === 'BOSS';
+
     setCompletedNodes(prev => {
       const newCompleted = new Set([...prev, nodeId]);
-      onNodeComplete?.(nodeId, newCompleted);
+      onNodeComplete?.(nodeId, newCompleted, isBossNode);
       return newCompleted;
     });
 
@@ -119,19 +125,14 @@ export const useProgressionSystem = (nodes, edges, options = {}) => {
 
   // 노드 상태 확인 함수들
   const isNodeActive = useCallback((nodeId) => {
-    const node = nodes.find(n => n.id === nodeId);
-    
-    // 보스 노드는 항상 색상 유지
-    if (node?.type === 'BOSS') {
-      return true;
-    }
-    
-    return completedNodes.has(nodeId) || availableNodes.has(nodeId);
-  }, [nodes, completedNodes, availableNodes]);
+    // 현재 레벨(플레이 가능한 레벨)의 노드들만 색상 활성화
+    return availableNodes.has(nodeId);
+  }, [availableNodes]);
 
   const isNodeClickable = useCallback((nodeId) => {
-    return availableNodes.has(nodeId) && !completedNodes.has(nodeId);
-  }, [availableNodes, completedNodes]);
+    // 현재 레벨의 노드들만 클릭 가능
+    return availableNodes.has(nodeId);
+  }, [availableNodes]);
 
   const isNodeCompleted = useCallback((nodeId) => {
     return completedNodes.has(nodeId);
@@ -222,6 +223,7 @@ export const useProgressionSystem = (nodes, edges, options = {}) => {
     currentNode,
     availableNodes,
     isLoading,
+    currentLevel: getCurrentLevel(),
     
     // 액션
     completeNode,

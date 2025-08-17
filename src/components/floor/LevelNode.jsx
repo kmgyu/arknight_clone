@@ -1,4 +1,16 @@
-import React from 'react';
+// // 노드 상태별 스타일 클래스 반환
+//   const getNodeClasses = (type, isActive, isCompleted, isClickable, isCurrent) => {
+//     const baseClasses = "flex items-center justify-center text-white border-2 rounded-md font-medium transition-all duration-300 px-4 py-2 whitespace-nowrap overflow-hidden text-ellipsis relative";
+    
+//     // 현재 플레이 가능한 노드들만 색상 활성화
+//     if (isActive && isClickable) {
+//       switch (type) {
+//         case 'COMBAT':
+//           return `${baseClasses} bg-gray-700 border-gray-400 hover:border-gray-200 hover:shadow-lg hover:shadow-gray-400/30 cursor-pointer hover:scale-105`;
+//         case 'ENCOUNTER':
+//           return `${baseClasses} bg-sky-600 border-sky-400 hover:border-sky-200 hover:shadow-lg hover:shadow-sky-400/30 cursor-pointer hover:scale-105`;
+//         case 'EMERGENCY':
+//           return `${baseClasses} bg-red-700 border-red-import React from 'react';
 import { Check, Lock, Crown, Sword, Users, AlertTriangle, Dice6, Shield } from 'lucide-react';
 
 function LevelNode({ 
@@ -38,18 +50,8 @@ function LevelNode({
   const getNodeClasses = (type, isActive, isCompleted, isClickable, isCurrent) => {
     const baseClasses = "flex items-center justify-center text-white border-2 rounded-md font-medium transition-all duration-300 px-4 py-2 whitespace-nowrap overflow-hidden text-ellipsis relative";
     
-    // 완료된 노드 스타일
-    if (isCompleted) {
-      return `${baseClasses} bg-green-600 border-green-400 shadow-lg shadow-green-400/30 cursor-pointer`;
-    }
-    
-    // 현재 선택된 노드 스타일
-    if (isCurrent) {
-      return `${baseClasses} bg-yellow-500 border-yellow-300 shadow-lg shadow-yellow-400/50 ring-2 ring-yellow-300 cursor-pointer animate-pulse`;
-    }
-    
-    // 클릭 가능한 노드 스타일
-    if (isClickable && isActive) {
+    // 현재 플레이 가능한 노드들만 색상 활성화
+    if (isActive && isClickable) {
       switch (type) {
         case 'COMBAT':
           return `${baseClasses} bg-gray-700 border-gray-400 hover:border-gray-200 hover:shadow-lg hover:shadow-gray-400/30 cursor-pointer hover:scale-105`;
@@ -68,35 +70,23 @@ function LevelNode({
       }
     }
     
-    // 비활성화된 노드 스타일 (보스 노드는 예외)
-    if (!isActive || !isClickable) {
-      // 보스 노드는 비활성화 상태에서도 색상 유지
-      if (type === 'BOSS') {
-        return `${baseClasses} bg-purple-700 border-purple-500 opacity-60 cursor-not-allowed`;
-      }
-      
-      // 다른 노드들은 회색 처리
-      return `${baseClasses} bg-gray-600 border-gray-500 opacity-60 cursor-not-allowed`;
+    // 현재 선택된 노드 (플레이 중)
+    if (isCurrent) {
+      return `${baseClasses} bg-yellow-500 border-yellow-300 shadow-lg shadow-yellow-400/50 ring-2 ring-yellow-300 animate-pulse`;
     }
     
-    // 기본 스타일
-    return `${baseClasses} bg-gray-700 border-gray-400`;
+    // 모든 다른 노드들은 회색 처리 (완료됨, 미래 레벨, 현재 레벨의 다른 노드)
+    return `${baseClasses} bg-gray-600 border-gray-500 opacity-60 cursor-not-allowed`;
   };
 
-  // 노드 상태 오버레이 (완료, 잠김 표시)
+  // 노드 상태 오버레이 (완료, 현재 진행 표시)
   const getStatusOverlay = () => {
     if (isCompleted) {
       return (
-        <div className="absolute top-1 right-1">
-          <Check size={14} className="text-green-200" />
-        </div>
-      );
-    }
-    
-    if (!isClickable && !isActive && node.type !== 'BOSS') {
-      return (
-        <div className="absolute top-1 right-1">
-          <Lock size={14} className="text-gray-400" />
+        <div className="absolute -top-1 -right-1">
+          <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+            <Check size={12} className="text-white" />
+          </div>
         </div>
       );
     }
@@ -106,9 +96,17 @@ function LevelNode({
 
   // 클릭 핸들러
   const handleClick = () => {
-    if (isClickable || isCompleted) {
+    if (isClickable) {
       onClick?.();
     }
+  };
+
+  // 툴팁 텍스트 생성
+  const getTooltipText = () => {
+    if (isCompleted) return `${node.label} - ${node.type} (완료됨)`;
+    if (isCurrent) return `${node.label} - ${node.type} (진행 중)`;
+    if (isClickable) return `${node.label} - ${node.type} (플레이 가능)`;
+    return `${node.label} - ${node.type} (잠김)`;
   };
 
   return (
@@ -117,7 +115,7 @@ function LevelNode({
       className={getNodeClasses(node.type, isActive, isCompleted, isClickable, isCurrent)}
       onClick={handleClick}
       style={style}
-      title={`${node.label} - ${node.type} ${isCompleted ? '(완료)' : isClickable ? '(플레이 가능)' : '(잠김)'}`}
+      title={getTooltipText()}
     >
       {/* 노드 아이콘과 라벨 */}
       {getNodeIcon(node.type)}
