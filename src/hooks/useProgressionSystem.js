@@ -8,13 +8,14 @@ import { saveProgress, loadProgress, validateNodeAccess, getRecommendedNodes } f
  * @param {Object} options - 옵션 설정
  * @returns {Object} 진행 시스템 상태와 메서드들
  */
-export const useProgressionSystem = (nodes, edges, options = {}) => {
+export const useProgressionSystem = (initialNodes, initialEdges, options = {}) => {
   const {
     autoSave = true,
     autoLoad = true,
     onNodeComplete = null,
     onNodeSelect = null,
-    onProgressChange = null
+    onProgressChange = null,
+    onFloorComplete = null
   } = options;
 
   // 상태 관리
@@ -22,6 +23,9 @@ export const useProgressionSystem = (nodes, edges, options = {}) => {
   const [currentNode, setCurrentNode] = useState(null);
   const [availableNodes, setAvailableNodes] = useState(new Set());
   const [isLoading, setIsLoading] = useState(false);
+  const [currentFloor, setCurrentFloor] = useState(1);
+  const [nodes, setNodes] = useState(initialNodes);
+  const [edges, setEdges] = useState(initialEdges);
 
   // 초기 로드
   useEffect(() => {
@@ -34,29 +38,66 @@ export const useProgressionSystem = (nodes, edges, options = {}) => {
     }
   }, [autoLoad]);
 
-  // 현재 진행 중인 레벨 계산
+  // 다음 Floor로 진행
+  const progressToNextFloor = useCallback(() => {
+    if (currentFloor >= 5) {
+      console.log('모든 Floor를 완료했습니다!');
+      return false;
+    }
+    
+    const nextFloor = currentFloor + 1;
+    setCurrentFloor(nextFloor);
+    
+    // 새로운 Floor의 그래프 생성
+    const { generateDAGGraph } = require('@/utils/graphGenerator');
+    const newGraph = generateDAGGraph(nextFloor, 4, 4);
+    setNodes(newGraph.nodes);
+    setEdges(newGraph.edges);
+    
+    // 진행 상황 초기화 (새로운 Floor 시작)
+    setCompletedNodes(new Set());
+    setCurrentNode(null);
+    
+    onFloorComplete?.(nextFloor);
+    return true;
+  }, [currentFloor, onFloorComplete]);
+
+  // 현재 Floor의 레벨 계산
   const getCurrentLevel = useCallback(() => {
-    if (completedNodes.size === 0) return 0;
+    const floorNodes = nodes.filter(n => n.floor === currentFloor);
+    
+    if (floorNodes.length === 0) return 0;
     
     const completedLevels = Array.from(completedNodes)
-      .map(nodeId => nodes.find(n => n.id === nodeId)?.level)
-      .filter(level => level !== undefined);
+      .map(nodeId => {
+        const node = nodes.find(n => n.id === nodeId);
+        return node?.floor === currentFloor ? node.level : null;
+      })
+      .filter(level => level !== null);
     
+    // 현재 Floor에서 완료된 레벨이 있으면 다음 레벨로, 없으면 0레벨부터
     return completedLevels.length > 0 ? Math.max(...completedLevels) + 1 : 0;
-  }, [completedNodes, nodes]);
+  }, [completedNodes, nodes, currentFloor]);
 
-  // 사용 가능한 노드 계산 (현재 레벨의 노드들만)
+  // 사용 가능한 노드 계산 (현재 Floor의 현재 레벨 노드들만)
   const updateAvailableNodes = useCallback(() => {
     const available = new Set();
     const currentLevelNum = getCurrentLevel();
     
-    // 현재 레벨의 모든 노드가 사용 가능
-    nodes
-      .filter(node => node.level === currentLevelNum)
-      .forEach(node => available.add(node.id));
+    // 첫 번째 레벨(level 0)에서는 해당 Floor의 모든 노드가 사용 가능
+    if (currentLevelNum === 0) {
+      nodes
+        .filter(node => node.floor === currentFloor)
+        .forEach(node => available.add(node.id));
+    } else {
+      // 다른 레벨에서는 현재 레벨의 노드만 사용 가능
+      nodes
+        .filter(node => node.floor === currentFloor && node.level === currentLevelNum)
+        .forEach(node => available.add(node.id));
+    }
 
     setAvailableNodes(available);
-  }, [nodes, getCurrentLevel]);
+  }, [nodes, getCurrentLevel, currentFloor]);
 
   // 사용 가능한 노드 업데이트
   useEffect(() => {
@@ -99,11 +140,19 @@ export const useProgressionSystem = (nodes, edges, options = {}) => {
     setCompletedNodes(prev => {
       const newCompleted = new Set([...prev, nodeId]);
       onNodeComplete?.(nodeId, newCompleted, isBossNode);
+      
+      // 보스 노드 완료 시 다음 Floor로 진행
+      if (isBossNode) {
+        setTimeout(() => {
+          progressToNextFloor();
+        }, 2000); // 2초 후 다음 Floor로 진행
+      }
+      
       return newCompleted;
     });
 
     return true;
-  }, [nodes, completedNodes, onNodeComplete]);
+  }, [nodes, completedNodes, onNodeComplete, progressToNextFloor]);
 
   // 노드 선택 처리
   const selectNode = useCallback((nodeId) => {
@@ -152,6 +201,9 @@ export const useProgressionSystem = (nodes, edges, options = {}) => {
     const bossNodes = nodes.filter(n => n.type === 'BOSS');
     const bossCompleted = bossNodes.filter(boss => completedNodes.has(boss.id)).length;
     
+    const totalFloors = 5; // 고정 5개 Floor
+    const floorProgress = currentFloor / totalFloors;
+    
     return {
       totalNodes,
       completed,
@@ -160,9 +212,12 @@ export const useProgressionSystem = (nodes, edges, options = {}) => {
       completionRate: completed / totalNodes,
       bossNodes: bossNodes.length,
       bossCompleted,
-      isGameComplete: bossCompleted === bossNodes.length
+      isGameComplete: currentFloor > 5,
+      currentFloor,
+      totalFloors,
+      floorProgress
     };
-  }, [nodes, completedNodes, availableNodes]);
+  }, [nodes, completedNodes, availableNodes, currentFloor]);
 
   // 추천 노드 가져오기
   const getRecommendations = useCallback(() => {
@@ -224,6 +279,7 @@ export const useProgressionSystem = (nodes, edges, options = {}) => {
     availableNodes,
     isLoading,
     currentLevel: getCurrentLevel(),
+    currentFloor,
     
     // 액션
     completeNode,
@@ -231,6 +287,7 @@ export const useProgressionSystem = (nodes, edges, options = {}) => {
     setCurrentNode,
     resetProgress,
     setProgressToLevel,
+    progressToNextFloor,
     
     // 상태 확인
     isNodeActive,

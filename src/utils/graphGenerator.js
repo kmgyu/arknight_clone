@@ -8,57 +8,62 @@ const typePool = ['COMBAT', // 작전
                 ];
 
 /**
- * DAG 그래프 자동 생성기
- * @param {number} maxLevel - 생성할 최대 레벨 수 (0부터 시작)
+ * 단일 Floor DAG 그래프 생성기
+ * @param {number} floorNumber - 생성할 Floor 번호 (1-5)
+ * @param {number} maxLevels - Floor 내 최대 레벨 수
  * @param {number} maxNodesPerLevel - 각 레벨당 최대 노드 수
  * @returns {{ nodes: Array, edges: Array }} - 그래프 노드와 엣지 배열
  */
-export function generateDAGGraph(maxLevel = 5, maxNodesPerLevel = 4) {
+export function generateDAGGraph(floorNumber = 1, maxLevels = 4, maxNodesPerLevel = 4) {
   const nodes = [];
   const edges = [];
 
-  // 노드 생성
-  for (let level = 0; level <= maxLevel; level++) {
-    const isBossLevel = level === maxLevel;
+  // 단일 Floor의 노드 생성
+  for (let level = 0; level <= maxLevels; level++) {
+    const isBossLevel = level === maxLevels;
     const nodeCount = isBossLevel ? 1 : Math.floor(Math.random() * maxNodesPerLevel) + 1;
 
     for (let i = 0; i < nodeCount; i++) {
-      const id = `${level}n${i + 1}`;
+      const id = `f${floorNumber}l${level}n${i + 1}`;
       let label, type;
       
       if (isBossLevel) {
-        label = '보스';
+        label = `Floor ${floorNumber} 보스`;
         type = 'BOSS';
       } else if (level === 0) {
-        label = `시작점 ${i + 1}`;
+        label = `Floor ${floorNumber} 시작점 ${i + 1}`;
         type = 'SAFE'; // 시작점은 안전한 곳으로 설정
       } else {
-        label = `${level}-${i + 1}`;
+        label = `F${floorNumber}-${level}-${i + 1}`;
         type = typePool[Math.floor(Math.random() * typePool.length)];
       }
       
       const content = getNodeContentComponent(type);
       
-      nodes.push({ id, label, type, level, content });
+      nodes.push({ 
+        id, 
+        label, 
+        type, 
+        level, 
+        floor: floorNumber,
+        content 
+      });
     }
   }
 
-  // 엣지 생성
-  for (let level = 0; level < maxLevel; level++) {
+  // 단일 Floor 내에서 레벨 간 연결
+  for (let level = 0; level < maxLevels; level++) {
     const currentLevelNodes = nodes.filter(n => n.level === level);
     const nextLevelNodes = nodes.filter(n => n.level === level + 1);
 
     currentLevelNodes.forEach((source, sIdx) => {
-        // 최대 2개로 연결.
-        // ToDo : 원래는 4개까지도 가능해야 할 건데, 교차 방지라 로직 더 복잡해질거같으니까 일단 나중에...
-        // 보정하는 과정에서 노드 연결되면서 교차되는 불상사가 생긴다.
-        const maxConnections = Math.min(2, nextLevelNodes.length);
-        const startIdx = Math.min(sIdx, nextLevelNodes.length - maxConnections);
-        const targets = nextLevelNodes.slice(startIdx, startIdx + maxConnections); 
-        
-        targets.forEach(target => {
-          edges.push([source.id, target.id]);
-        });
+      const maxConnections = Math.min(2, nextLevelNodes.length);
+      const startIdx = Math.min(sIdx, nextLevelNodes.length - maxConnections);
+      const targets = nextLevelNodes.slice(startIdx, startIdx + maxConnections); 
+      
+      targets.forEach(target => {
+        edges.push([source.id, target.id]);
+      });
     });
 
     // 연결 보정 : 입구 없음
@@ -71,9 +76,9 @@ export function generateDAGGraph(maxLevel = 5, maxNodesPerLevel = 4) {
     });
   }
 
-  // 연결 보정 : 출구 없음
+  // Floor 내 연결 보정 : 출구 없음
   nodes
-    .filter(n => n.level < maxLevel) // 중간 노드 및 시작 노드
+    .filter(n => n.level < maxLevels) // 중간 노드 및 시작 노드
     .forEach((node) => {
       const hasOutput = edges.some(([from, _]) => from === node.id);
       if (!hasOutput) {
@@ -86,22 +91,20 @@ export function generateDAGGraph(maxLevel = 5, maxNodesPerLevel = 4) {
     });
 
   // 보스 노드 연결 보정 - 마지막 레벨의 모든 노드가 보스로 연결되도록
-  if (maxLevel > 0) {
-    const bossNode = nodes.find(n => n.type === 'BOSS');
-    const lastRegularLevel = maxLevel - 1;
-    const lastLevelNodes = nodes.filter(n => n.level === lastRegularLevel);
-    
-    if (bossNode) {
-      lastLevelNodes.forEach(node => {
-        const alreadyConnected = edges.some(([from, to]) => 
-          from === node.id && to === bossNode.id
-        );
-        
-        if (!alreadyConnected) {
-          edges.push([node.id, bossNode.id]);
-        }
-      });
-    }
+  const bossNode = nodes.find(n => n.type === 'BOSS');
+  const lastRegularLevel = maxLevels - 1;
+  const lastLevelNodes = nodes.filter(n => n.level === lastRegularLevel);
+  
+  if (bossNode) {
+    lastLevelNodes.forEach(node => {
+      const alreadyConnected = edges.some(([from, to]) => 
+        from === node.id && to === bossNode.id
+      );
+      
+      if (!alreadyConnected) {
+        edges.push([node.id, bossNode.id]);
+      }
+    });
   }
   
   return { nodes, edges };

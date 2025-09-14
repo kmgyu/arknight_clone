@@ -3,8 +3,10 @@ import LevelNode from '@/components/floor/LevelNode';
 import { generateDAGGraph } from '@/utils/graphGenerator.js';
 import { useProgressionSystem } from '@/hooks/useProgressionSystem';
 import CompletionModal from '@/components/floor/CompletionModal';
+import FloorCompletionModal from '@/components/floor/FloorCompletionModal';
 
-const { nodes, edges } = generateDAGGraph(5, 4);
+// 첫 번째 Floor로 시작
+const { nodes, edges } = generateDAGGraph(1, 4, 4);
 
 // 노드를 레벨별로 그룹화하는 유틸 함수
 const groupNodesByLevel = (nodes) => {
@@ -102,9 +104,10 @@ const useConnectionLines = (edges, contentRef, contentDimensions, currentLevel, 
 };
 
 function LevelGraph({ selectedNode, onNodeSelect }) {
-  const { dimensions, contentDimensions, containerRef } = useDimensions(nodes);
   const contentRef = useRef(null);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [showFloorCompletionModal, setShowFloorCompletionModal] = useState(false);
+  const [completedFloor, setCompletedFloor] = useState(null);
   const [gameStartTime] = useState(Date.now());
   
   const {
@@ -112,6 +115,9 @@ function LevelGraph({ selectedNode, onNodeSelect }) {
     currentNode,
     availableNodes,
     currentLevel,
+    currentFloor,
+    // nodes,
+    // edges,
     completeNode,
     selectNode,
     isNodeActive,
@@ -126,18 +132,25 @@ function LevelGraph({ selectedNode, onNodeSelect }) {
     onNodeComplete: (nodeId, completedSet, isBossNode) => {
       console.log(`노드 ${nodeId} 완료!`);
       
-      // 보스 노드 완료 시 모달 표시
+      // 보스 노드 완료 시 Floor 완료 메시지 표시
       if (isBossNode) {
+        console.log(`🎉 Floor ${currentFloor} 완료!`);
+        
+        setCompletedFloor(currentFloor);
         setTimeout(() => {
-          setShowCompletionModal(true);
+          setShowFloorCompletionModal(true);
         }, 1000); // 1초 후 모달 표시
       }
     },
     onNodeSelect: (node) => {
       console.log(`노드 ${node.id} 선택됨`);
+    },
+    onFloorComplete: (newFloor) => {
+      console.log(`Floor ${newFloor}로 진행합니다!`);
     }
   });
 
+  const { dimensions, contentDimensions, containerRef } = useDimensions(nodes);
   const lines = useConnectionLines(edges, contentRef, contentDimensions, currentLevel, nodes);
   
   const levelGroups = groupNodesByLevel(nodes);
@@ -165,8 +178,16 @@ function LevelGraph({ selectedNode, onNodeSelect }) {
   const handleRestart = () => {
     resetProgress();
     setShowCompletionModal(false);
+    setShowFloorCompletionModal(false);
+    setCompletedFloor(null);
     // 새로운 그래프 생성 (실제로는 새로운 층 데이터 로드)
     window.location.reload(); // 임시 방법, 실제로는 상태 초기화
+  };
+
+  // Floor 완료 모달 닫기 핸들러
+  const handleFloorCompletionClose = () => {
+    setShowFloorCompletionModal(false);
+    setCompletedFloor(null);
   };
 
   // 완료 시간 계산
@@ -276,13 +297,15 @@ function LevelGraph({ selectedNode, onNodeSelect }) {
       <div className="absolute top-4 left-4 bg-gray-800/90 backdrop-blur-sm rounded-lg p-4 text-white z-40">
         <h3 className="text-lg font-bold mb-2">진행 상황</h3>
         <div className="space-y-1 text-sm">
-          <div>현재 레벨: <span className="text-yellow-400 font-bold">{currentLevel}</span></div>
+          <div>현재 Floor: <span className="text-yellow-400 font-bold">{currentFloor}/5</span></div>
+          <div>현재 레벨: <span className="text-blue-400 font-bold">{currentLevel}</span></div>
           <div>완료된 노드: {progressStats.completed}/{progressStats.totalNodes}</div>
           <div>현재 플레이 가능: {progressStats.available}개</div>
           <div className="mt-2 pt-2 border-t border-gray-600">
-            <div>진행률: {Math.round(progressStats.completionRate * 100)}%</div>
+            <div>Floor 진행률: {Math.round(progressStats.floorProgress * 100)}%</div>
+            <div>전체 진행률: {Math.round(progressStats.completionRate * 100)}%</div>
             {progressStats.isGameComplete && (
-              <div className="text-yellow-400 font-bold">🎉 보스 클리어!</div>
+              <div className="text-yellow-400 font-bold">🎉 모든 Floor 클리어!</div>
             )}
           </div>
         </div>
@@ -315,6 +338,15 @@ function LevelGraph({ selectedNode, onNodeSelect }) {
         completedNodes={progressStats.completed}
         totalNodes={progressStats.totalNodes}
         completionTime={getCompletionTime()}
+      />
+
+      {/* Floor 완료 모달 */}
+      <FloorCompletionModal
+        isOpen={showFloorCompletionModal}
+        onClose={handleFloorCompletionClose}
+        completedFloor={completedFloor}
+        nextFloor={currentFloor}
+        isLastFloor={currentFloor > 5}
       />
     </div>
   );
