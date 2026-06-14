@@ -35,7 +35,7 @@ export const OPERATORS = {
       },
       {
         name: '돌격γ',
-        spReq: 10,
+        spReq: 2,
         launchRanks: [1, 2, 3, 4],
         targetRanks: [1, 2],
         type: 'attack',
@@ -46,7 +46,7 @@ export const OPERATORS = {
       },
       {
         name: '검우',
-        spReq: 24,
+        spReq: 3,
         launchRanks: [1, 2, 3],
         targetRanks: [1, 2, 3, 4],
         isAoe: true,
