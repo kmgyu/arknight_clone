@@ -1,16 +1,15 @@
+// src/components/floor/LevelGraph.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import LevelNode from '@/components/floor/LevelNode';
-import { generateDAGGraph } from '@/utils/graphGenerator.js';
 import { useProgressionSystem } from '@/hooks/useProgressionSystem';
 import CompletionModal from '@/components/floor/CompletionModal';
 import FloorCompletionModal from '@/components/floor/FloorCompletionModal';
-
-// 첫 번째 Floor로 시작
-const { nodes, edges } = generateDAGGraph(1, 4, 4);
+import SidebarPanel from '@/components/floor/SidebarPanel';
 
 // 노드를 레벨별로 그룹화하는 유틸 함수
-const groupNodesByLevel = (nodes) => {
-  return nodes.reduce((acc, node) => {
+const groupNodesByLevel = (nodesList) => {
+  if (!nodesList) return {};
+  return nodesList.reduce((acc, node) => {
     acc[node.level] = acc[node.level] || [];
     acc[node.level].push(node);
     return acc;
@@ -18,20 +17,19 @@ const groupNodesByLevel = (nodes) => {
 };
 
 // 차원 계산 및 관리 훅
-const useDimensions = (nodes) => {
+const useDimensions = (nodesList) => {
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [contentDimensions, setContentDimensions] = useState({ width: 0, height: 0 });
   const containerRef = useRef(null);
 
   useEffect(() => {
     const updateDimensions = () => {
-      if (!containerRef.current) return;
+      if (!containerRef.current || !nodesList) return;
       
       const { offsetWidth: containerWidth, offsetHeight: containerHeight } = containerRef.current;
-      const levelGroups = groupNodesByLevel(nodes);
+      const levelGroups = groupNodesByLevel(nodesList);
       const totalLevels = Object.keys(levelGroups).length;
       
-      // 각 레벨당 최소 너비 설정
       const minLevelWidth = 250;
       const calculatedWidth = totalLevels * minLevelWidth;
       const contentWidth = Math.max(containerWidth, calculatedWidth);
@@ -43,16 +41,16 @@ const useDimensions = (nodes) => {
     updateDimensions();
     window.addEventListener('resize', updateDimensions);
     return () => window.removeEventListener('resize', updateDimensions);
-  }, [nodes]);
+  }, [nodesList]);
 
   return { dimensions, contentDimensions, containerRef };
 };
 
-// SVG 라인 생성 함수 (현재 레벨과의 연결만 활성화)
-const createConnectionLines = (edges, contentRef, currentLevel, nodes) => {
-  if (!contentRef.current) return [];
+// SVG 연결선 생성 함수 (현재 레벨과의 연결만 활성화)
+const createConnectionLines = (edgesList, contentRef, currentLevel, nodesList) => {
+  if (!contentRef.current || !edgesList || !nodesList) return [];
   
-  return edges.map(([fromId, toId], idx) => {
+  return edgesList.map(([fromId, toId], idx) => {
     const fromElem = document.getElementById(`node-${fromId}`);
     const toElem = document.getElementById(`node-${toId}`);
     if (!fromElem || !toElem) return null;
@@ -61,9 +59,8 @@ const createConnectionLines = (edges, contentRef, currentLevel, nodes) => {
     const fromRect = fromElem.getBoundingClientRect();
     const toRect = toElem.getBoundingClientRect();
     
-    // 연결선 활성화 조건: 현재 레벨과 관련된 연결
-    const fromNode = nodes.find(n => n.id === fromId);
-    const toNode = nodes.find(n => n.id === toId);
+    const fromNode = nodesList.find(n => n.id === fromId);
+    const toNode = nodesList.find(n => n.id === toId);
     const isCurrentLevelConnection = 
       (fromNode?.level === currentLevel - 1 && toNode?.level === currentLevel) ||
       (fromNode?.level === currentLevel && toNode?.level === currentLevel + 1);
@@ -86,122 +83,60 @@ const createConnectionLines = (edges, contentRef, currentLevel, nodes) => {
 };
 
 // 연결선 렌더링 관리 훅
-const useConnectionLines = (edges, contentRef, contentDimensions, currentLevel, nodes) => {
+const useConnectionLines = (edgesList, contentRef, contentDimensions, currentLevel, nodesList) => {
   const [lines, setLines] = useState([]);
 
   useEffect(() => {
-    if (contentDimensions.width === 0) return;
+    if (contentDimensions.width === 0 || !edgesList) return;
 
-    // DOM 요소들이 렌더링될 때까지 잠깐 기다림
     const timer = setTimeout(() => {
-      setLines(createConnectionLines(edges, contentRef, currentLevel, nodes));
-    }, 10);
+      setLines(createConnectionLines(edgesList, contentRef, currentLevel, nodesList));
+    }, 50);
 
     return () => clearTimeout(timer);
-  }, [edges, contentDimensions, currentLevel, nodes]);
+  }, [edgesList, contentDimensions, currentLevel, nodesList]);
 
   return lines;
 };
 
 function LevelGraph({ selectedNode, onNodeSelect }) {
   const contentRef = useRef(null);
-  const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [showFloorCompletionModal, setShowFloorCompletionModal] = useState(false);
   const [completedFloor, setCompletedFloor] = useState(null);
-  const [gameStartTime] = useState(Date.now());
   
   const {
     completedNodes,
-    currentNode,
     availableNodes,
     currentLevel,
     currentFloor,
-    // nodes,
-    // edges,
-    completeNode,
-    selectNode,
+    nodes,
+    edges,
     isNodeActive,
     isNodeClickable,
     isNodeCompleted,
     isNodeCurrent,
     getProgressStats,
     resetProgress
-  } = useProgressionSystem(nodes, edges, {
-    autoSave: true,
-    autoLoad: true,
-    onNodeComplete: (nodeId, completedSet, isBossNode) => {
-      console.log(`노드 ${nodeId} 완료!`);
-      
-      // 보스 노드 완료 시 Floor 완료 메시지 표시
-      if (isBossNode) {
-        console.log(`🎉 Floor ${currentFloor} 완료!`);
-        
-        setCompletedFloor(currentFloor);
-        setTimeout(() => {
-          setShowFloorCompletionModal(true);
-        }, 1000); // 1초 후 모달 표시
-      }
-    },
-    onNodeSelect: (node) => {
-      console.log(`노드 ${node.id} 선택됨`);
-    },
-    onFloorComplete: (newFloor) => {
-      console.log(`Floor ${newFloor}로 진행합니다!`);
-    }
-  });
+  } = useProgressionSystem();
 
   const { dimensions, contentDimensions, containerRef } = useDimensions(nodes);
   const lines = useConnectionLines(edges, contentRef, contentDimensions, currentLevel, nodes);
   
   const levelGroups = groupNodesByLevel(nodes);
   const levels = Object.keys(levelGroups).sort((a, b) => a - b);
-  const levelWidth = contentDimensions.width / levels.length;
+  const levelWidth = levels.length > 0 ? contentDimensions.width / levels.length : 0;
   
   const nodeSize = { width: 200, height: 80 };
 
-  // 노드 클릭 핸들러
+  // 노드 클릭 핸들러 (사이드바 오픈)
   const handleNodeClick = (node) => {
-    if (selectNode(node.id)) {
-      onNodeSelect?.(node);
-      
-      // 실제 게임에서는 여기서 레벨 진입 로직 실행
-      // 임시로 노드를 바로 완료 처리 (실제로는 게임 완료 시 호출)
-      if (isNodeClickable(node.id)) {
-        setTimeout(() => {
-          completeNode(node.id);
-        }, 1000);
-      }
-    }
-  };
-
-  // 게임 재시작 핸들러
-  const handleRestart = () => {
-    resetProgress();
-    setShowCompletionModal(false);
-    setShowFloorCompletionModal(false);
-    setCompletedFloor(null);
-    // 새로운 그래프 생성 (실제로는 새로운 층 데이터 로드)
-    window.location.reload(); // 임시 방법, 실제로는 상태 초기화
-  };
-
-  // Floor 완료 모달 닫기 핸들러
-  const handleFloorCompletionClose = () => {
-    setShowFloorCompletionModal(false);
-    setCompletedFloor(null);
-  };
-
-  // 완료 시간 계산
-  const getCompletionTime = () => {
-    const elapsed = Date.now() - gameStartTime;
-    const minutes = Math.floor(elapsed / 60000);
-    const seconds = Math.floor((elapsed % 60000) / 1000);
-    return `${minutes}분 ${seconds}초`;
+    onNodeSelect?.(node);
   };
 
   const progressStats = getProgressStats();
 
   return (
-    <div className="relative w-full h-full bg-gray-900">
+    <div className="relative w-full h-full bg-slate-950">
       {/* 메인 그래프 영역 */}
       <div 
         className="relative w-full h-full overflow-x-auto overflow-y-hidden" 
@@ -245,11 +180,11 @@ function LevelGraph({ selectedNode, onNodeSelect }) {
             return (
               <div 
                 key={level} 
-                className="flex flex-col justify-start items-center border-r border-gray-600 relative z-20"
+                className="flex flex-col justify-start items-center border-r border-slate-900 relative z-20"
                 style={{ width: `${levelWidth}px`, height: '100%' }}
               >
-                <div className="absolute top-0 left-1/2 w-0.5 h-5 bg-gray-500 transform -translate-x-1/2" />
-                <div className="absolute top-5 left-1/2 transform -translate-x-1/2 text-xs text-gray-400 font-mono">
+                <div className="absolute top-0 left-1/2 w-0.5 h-5 bg-slate-800 transform -translate-x-1/2" />
+                <div className="absolute top-5 left-1/2 transform -translate-x-1/2 text-xs text-slate-500 font-mono">
                   Level {level}
                 </div>
                 
@@ -287,63 +222,45 @@ function LevelGraph({ selectedNode, onNodeSelect }) {
 
         {/* 스크롤 인디케이터 */}
         {contentDimensions.width > dimensions.width && (
-          <div className="absolute bottom-2 right-2 bg-gray-800 text-gray-300 text-xs px-2 py-1 rounded z-30">
-            좌우로 스크롤하세요 →
+          <div className="absolute bottom-2 right-2 bg-slate-900 text-slate-400 text-[10px] px-2 py-1 border border-slate-800 rounded z-30 font-bold uppercase tracking-wider">
+            좌우 드래그 스크롤 →
           </div>
         )}
       </div>
 
       {/* 진행 상황 UI */}
-      <div className="absolute top-4 left-4 bg-gray-800/90 backdrop-blur-sm rounded-lg p-4 text-white z-40">
-        <h3 className="text-lg font-bold mb-2">진행 상황</h3>
-        <div className="space-y-1 text-sm">
+      <div className="absolute top-4 left-4 bg-slate-900/95 border border-slate-800 rounded-lg p-4 text-white z-40 shadow-2xl backdrop-blur-sm">
+        <h3 className="text-sm font-extrabold text-amber-500 uppercase tracking-wider mb-2 border-b border-slate-800 pb-1">진행 상황</h3>
+        <div className="space-y-1 text-xs">
           <div>현재 Floor: <span className="text-yellow-400 font-bold">{currentFloor}/5</span></div>
           <div>현재 레벨: <span className="text-blue-400 font-bold">{currentLevel}</span></div>
-          <div>완료된 노드: {progressStats.completed}/{progressStats.totalNodes}</div>
-          <div>현재 플레이 가능: {progressStats.available}개</div>
-          <div className="mt-2 pt-2 border-t border-gray-600">
+          <div>진행도: {progressStats.completed}/{progressStats.totalNodes} 노드 완료</div>
+          <div className="mt-2 pt-2 border-t border-slate-800">
             <div>Floor 진행률: {Math.round(progressStats.floorProgress * 100)}%</div>
             <div>전체 진행률: {Math.round(progressStats.completionRate * 100)}%</div>
-            {progressStats.isGameComplete && (
-              <div className="text-yellow-400 font-bold">🎉 모든 Floor 클리어!</div>
-            )}
           </div>
         </div>
       </div>
 
       {/* 범례 */}
-      <div className="absolute top-4 right-4 bg-gray-800/90 backdrop-blur-sm rounded-lg p-3 text-white text-xs z-40">
-        <h4 className="font-bold mb-2">범례</h4>
-        <div className="space-y-1">
+      <div className="absolute top-4 right-4 bg-slate-900/95 border border-slate-800 rounded-lg p-3 text-white text-[10px] z-40 shadow-2xl backdrop-blur-sm">
+        <h4 className="font-extrabold text-amber-500 uppercase tracking-wider mb-2 border-b border-slate-800 pb-1">범례</h4>
+        <div className="space-y-1.5">
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-gray-600 rounded opacity-60"></div>
-            <span>완료/현재 레벨</span>
+            <div className="w-2.5 h-2.5 bg-slate-800 border border-slate-700 rounded opacity-60"></div>
+            <span>완료 또는 미도달 지역</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-blue-500 rounded"></div>
-            <span>플레이 가능</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-gray-500 rounded opacity-30"></div>
-            <span>미래 레벨</span>
+            <div className="w-2.5 h-2.5 bg-blue-500 rounded shadow-[0_0_8px_rgba(59,130,246,0.6)]"></div>
+            <span>진입 가능 작전지</span>
           </div>
         </div>
       </div>
 
-      {/* 완료 모달 */}
-      <CompletionModal
-        isOpen={showCompletionModal}
-        onClose={() => setShowCompletionModal(false)}
-        onRestart={handleRestart}
-        completedNodes={progressStats.completed}
-        totalNodes={progressStats.totalNodes}
-        completionTime={getCompletionTime()}
-      />
-
       {/* Floor 완료 모달 */}
       <FloorCompletionModal
         isOpen={showFloorCompletionModal}
-        onClose={handleFloorCompletionClose}
+        onClose={() => setShowFloorCompletionModal(false)}
         completedFloor={completedFloor}
         nextFloor={currentFloor}
         isLastFloor={currentFloor > 5}
