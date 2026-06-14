@@ -17,8 +17,9 @@ const CombatUnit = ({ unit, isEnemy, isActive, onSelect, isTargetable, isSelecte
   const isVirtue = unit.combatAffliction === 'virtue';
 
   // 아군 특화 수치 (SP, 정신력)
-  const spPercent = !isEnemy ? (unit.sp / unit.skills[0].spReq) * 100 : 0;
-  const hasMaxSp = !isEnemy && unit.sp >= unit.skills[0].spReq;
+  const maxSp = !isEnemy ? (Math.max(...unit.skills.map(s => s.spReq)) || 1) : 1;
+  const spPercent = !isEnemy ? (unit.sp / maxSp) * 100 : 0;
+  const hasMaxSp = !isEnemy && unit.sp >= maxSp;
 
   // 상태 이상 배열
   const statusEffects = [];
@@ -122,7 +123,7 @@ const CombatUnit = ({ unit, isEnemy, isActive, onSelect, isTargetable, isSelecte
           <div className="space-y-0.5">
             <div className="flex justify-between text-[8px] font-mono text-amber-300">
               <span>SP</span>
-              <span>{Math.round(unit.sp)}/{unit.skills[0].spReq}</span>
+              <span>{Math.round(unit.sp)}/{maxSp}</span>
             </div>
             <div className="w-full h-1 bg-gray-950 rounded overflow-hidden relative">
               <div 

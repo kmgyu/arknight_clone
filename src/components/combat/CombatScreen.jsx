@@ -3,12 +3,31 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useDispatch } from 'react-redux';
 import { useCombat } from '@/hooks/useCombat';
 import CombatUnit from './CombatUnit';
+import { OPERATORS } from '@/config/gameData';
 
 const CombatScreen = () => {
   const dispatch = useDispatch();
-  const { combat, executeSkill, proceedTurn, validateSkillRange } = useCombat();
+  const { combat, executeSkill, proceedTurn, executeEnemyAi, validateSkillRange } = useCombat();
   const [selectedSkill, setSelectedSkill] = useState(null);
   const logEndRef = useRef(null);
+
+  // 1. 전투 시작 시 (setup 페이즈) 첫 번째 턴 라운드를 자동 기동
+  useEffect(() => {
+    if (combat && combat.phase === 'setup') {
+      proceedTurn(combat);
+    }
+  }, [combat, proceedTurn]);
+
+  // 2. 적의 차례가 되면 1.2초 후 AI가 자동 공격을 실행하도록 연동 (Stale Closure 예방)
+  const activeUnitInfo = combat?.turnQueue?.[combat?.currentTurnIndex];
+  useEffect(() => {
+    if (combat && combat.phase === 'enemy_turn' && activeUnitInfo && activeUnitInfo.isEnemy) {
+      const timer = setTimeout(() => {
+        executeEnemyAi(activeUnitInfo.enemyIndex);
+      }, 1200);
+      return () => clearTimeout(timer);
+    }
+  }, [combat?.phase, combat?.currentTurnIndex, activeUnitInfo, executeEnemyAi]);
 
   // 자동 로그 스크롤
   useEffect(() => {
@@ -18,20 +37,26 @@ const CombatScreen = () => {
   if (!combat) return null;
 
   const { party, enemies, turnQueue, currentTurnIndex, logs, phase } = combat;
-  const activeUnitInfo = turnQueue[currentTurnIndex];
   const isPlayerTurn = phase === 'player_turn';
 
   // 현재 턴을 가진 아군 오퍼레이터
-  const activeOperator = !isPlayerTurn ? null : party[activeUnitInfo.partyIndex];
-  const activeOperatorIndex = !isPlayerTurn ? -1 : activeUnitInfo.partyIndex;
+  const activeOperator = !isPlayerTurn || !activeUnitInfo ? null : party[activeUnitInfo.partyIndex];
+  const activeOperatorIndex = !isPlayerTurn || !activeUnitInfo ? -1 : activeUnitInfo.partyIndex;
+
+  // 오래된 세이브 데이터 대응용 스킬 맵핑 헬퍼 (스킬 개수가 3개 미만이면 gameData 템플릿의 스킬 적용)
+  const activeOperatorSkills = activeOperator 
+    ? (activeOperator.skills?.length >= 3 
+        ? activeOperator.skills 
+        : (OPERATORS[activeOperator.id]?.skills || activeOperator.skills))
+    : [];
 
   // 스킬 클릭 핸들러
   const handleSkillClick = (skill) => {
     if (!isPlayerTurn || !activeOperator) return;
 
-    // SP 조건 검증 (첫 번째 스킬은 일반 공격처럼 항상 시전 가능하고, 다른 스킬은 SP가 소모되는 특수기)
-    const isSignature = skill.spReq > 8; // SP 요구량이 큰 스킬을 필살기로 취급
-    if (isSignature && activeOperator.sp < skill.spReq) {
+    // SP 조건 검증
+    const requiresSp = skill.spReq > 0;
+    if (requiresSp && activeOperator.sp < skill.spReq) {
       alert('SP가 부족합니다!');
       return;
     }
@@ -49,7 +74,7 @@ const CombatScreen = () => {
 
     // 사거리 체크
     const isValid = validateSkillRange(
-      false, // 아군이 시전하므로 isEnemy = false
+      false,
       selectedSkill,
       activeOperatorIndex,
       targetIdx
@@ -57,9 +82,7 @@ const CombatScreen = () => {
 
     if (!isValid) return;
 
-    // 타겟이 치유 스킬인데 적인 경우 또는 공격 스킬인데 아군인 경우 필터링 (자가회복 스펙터 예외처리)
-    const isSelfHeal = selectedSkill.type === 'heal' && selectedSkill.launchRanks.includes(4 - activeOperatorIndex) && selectedSkill.targetRanks.includes(4 - activeOperatorIndex) && targetIdx === activeOperatorIndex && !isTargetEnemy;
-    
+    // 타겟 유형 검증
     if (selectedSkill.type === 'heal' && isTargetEnemy) return;
     if (selectedSkill.type === 'attack' && !isTargetEnemy) return;
 
@@ -79,7 +102,6 @@ const CombatScreen = () => {
   const checkTargetable = (targetIdx, isTargetEnemy) => {
     if (!selectedSkill || activeOperatorIndex === -1) return false;
     
-    // 공격 스킬은 적만, 치유 스킬은 아군만 (단, 치유 중 자가 회복은 본인만)
     if (selectedSkill.type === 'attack' && !isTargetEnemy) return false;
     if (selectedSkill.type === 'heal' && isTargetEnemy) return false;
 
@@ -121,13 +143,12 @@ const CombatScreen = () => {
           })}
         </div>
         <div className="text-xs font-mono pr-2 text-slate-400">
-          ROUND {waveText(combat.wave)}
+          ROUND {combat.wave}
         </div>
       </div>
 
-      {/* 2. 중앙 전투 전장 (아군 대치 구도) */}
+      {/* 2. 중앙 전투 전장 */}
       <div className="flex-1 grid grid-cols-9 items-center justify-center gap-4 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-900/60 via-slate-950 to-slate-950 border border-slate-900 rounded-lg py-6 px-2 relative overflow-hidden">
-        {/* 그리드 정교 백그라운드 디자인 */}
         <div className="absolute inset-0 bg-[linear-gradient(rgba(18,24,38,0.1)_1px,_transparent_1px),_linear-gradient(90deg,_rgba(18,24,38,0.1)_1px,_transparent_1px)] bg-[size:20px_20px] pointer-events-none" />
         
         {/* 아군 영역 (4열 ~ 1열) */}
@@ -183,7 +204,7 @@ const CombatScreen = () => {
       {/* 3. 하단 컨트롤 패널 & 로그 */}
       <div className="mt-4 grid grid-cols-12 gap-4 h-48">
         
-        {/* 스킬 및 아군 명령 콘트롤러 (좌측 8칸) */}
+        {/* 스킬 및 아군 명령 콘트롤러 */}
         <div className="col-span-7 bg-slate-900 border border-slate-800 rounded-lg p-3 flex flex-col justify-between backdrop-blur-sm">
           {isPlayerTurn && activeOperator ? (
             <div className="flex flex-col h-full justify-between">
@@ -204,15 +225,14 @@ const CombatScreen = () => {
                 </div>
               </div>
 
-              {/* 중단: 스킬 리스트 */}
-              <div className="grid grid-cols-2 gap-3 my-2">
-                {activeOperator.skills.map((skill, sIdx) => {
-                  const isSignature = skill.spReq > 8;
+              {/* 중단: 스킬 리스트 (3스킬 대응) */}
+              <div className="grid grid-cols-3 gap-2 my-2">
+                {activeOperatorSkills.map((skill, sIdx) => {
+                  const requiresSp = skill.spReq > 0;
                   const isCharged = activeOperator.sp >= skill.spReq;
-                  const canUse = !isSignature || isCharged;
+                  const canUse = !requiresSp || isCharged;
                   const isSelected = selectedSkill?.name === skill.name;
 
-                  // 사거리 정보 가이드 렌더링
                   const launchRanksStr = skill.launchRanks.join(',');
                   const targetRanksStr = skill.targetRanks.join(',');
 
@@ -221,31 +241,30 @@ const CombatScreen = () => {
                       key={sIdx}
                       disabled={!canUse}
                       onClick={() => handleSkillClick(skill)}
-                      className={`group relative text-left p-2 rounded border transition-all duration-200 flex flex-col justify-between h-[64px] ${
+                      className={`group relative text-left p-2 rounded border transition-all duration-200 flex flex-col justify-between h-[76px] ${
                         isSelected
-                          ? 'bg-amber-500 border-amber-400 text-slate-950'
+                          ? 'bg-amber-500 border-amber-400 text-slate-950 font-bold'
                           : !canUse
-                          ? 'bg-slate-950/50 border-slate-900 text-slate-600 cursor-not-allowed opacity-50'
+                          ? 'bg-slate-950/50 border-slate-900 text-slate-650 cursor-not-allowed opacity-50'
                           : isCharged
                           ? 'bg-slate-950 border-amber-600 hover:border-amber-400 text-white hover:bg-slate-900 shadow-[0_0_8px_rgba(245,158,11,0.25)]'
                           : 'bg-slate-950 border-slate-800 hover:border-slate-700 text-slate-200 hover:bg-slate-900'
                       }`}
                     >
                       <div className="flex justify-between items-center w-full">
-                        <span className="text-xs font-bold">{skill.name}</span>
-                        {isSignature && (
-                          <span className={`text-[8px] px-1 rounded font-mono ${
+                        <span className="text-[11px] font-black truncate pr-1">{skill.name}</span>
+                        {requiresSp && (
+                          <span className={`text-[8.5px] px-1 rounded font-mono ${
                             isSelected ? 'bg-slate-900 text-amber-400' : 'bg-amber-600 text-slate-950 font-bold'
                           }`}>
                             SP {activeOperator.sp}/{skill.spReq}
                           </span>
                         )}
                       </div>
-                      <div className={`text-[8px] mt-0.5 line-clamp-1 ${isSelected ? 'text-slate-800' : 'text-slate-400 group-hover:text-slate-200'}`}>
+                      <div className={`text-[9.5px] leading-normal mt-0.5 line-clamp-2 ${isSelected ? 'text-slate-800' : 'text-slate-400 group-hover:text-slate-200'}`}>
                         {skill.description}
                       </div>
-                      {/* 사거리 표식 */}
-                      <div className="flex justify-between items-center w-full text-[7px] mt-1 font-mono opacity-80">
+                      <div className="flex justify-between items-center w-full text-[8px] mt-0.5 font-mono opacity-80">
                         <span>시전: {launchRanksStr}열</span>
                         <span>타격: {targetRanksStr}열</span>
                       </div>
@@ -275,12 +294,12 @@ const CombatScreen = () => {
           )}
         </div>
 
-        {/* 우측 전투 기록 로그 (우측 5칸) */}
+        {/* 우측 전투 기록 로그 */}
         <div className="col-span-5 bg-slate-900 border border-slate-800 rounded-lg p-3 flex flex-col backdrop-blur-sm">
           <div className="text-[10px] text-slate-500 border-b border-slate-800 pb-1 mb-1 font-bold uppercase tracking-wider">
             Combat Log
           </div>
-          <div className="flex-1 overflow-y-auto font-mono text-[9px] text-slate-300 space-y-1 pr-1">
+          <div className="h-[124px] overflow-y-auto font-mono text-[9px] text-slate-300 space-y-1 pr-1 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-slate-950">
             {logs.map((log, lIdx) => {
               const isStart = log.includes('라운드');
               const isWin = log.includes('승리');
@@ -306,11 +325,6 @@ const CombatScreen = () => {
       </div>
     </div>
   );
-};
-
-// 라운드 이쁘게 매핑
-const waveText = (wave) => {
-  return wave;
 };
 
 export default CombatScreen;

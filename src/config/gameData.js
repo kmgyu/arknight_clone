@@ -24,6 +24,16 @@ export const OPERATORS = {
     },
     skills: [
       {
+        name: '일반 공격',
+        spReq: 0,
+        launchRanks: [1, 2],
+        targetRanks: [1, 2],
+        type: 'attack',
+        damageMult: 1.0,
+        hits: 1,
+        description: '전방의 적에게 표준 물리 피해를 입힙니다.'
+      },
+      {
         name: '돌격γ',
         spReq: 10,
         launchRanks: [1, 2, 3, 4],
@@ -32,7 +42,7 @@ export const OPERATORS = {
         damageMult: 1.3,
         hits: 1,
         effect: { type: 'gain_hope', value: 2 },
-        description: '적에게 1.3배의 물리 피해를 입히고 희망을 2 얻습니다.'
+        description: '적에게 1.3배의 물리 피해를 입히고 희망을 2 얻습니다. (SP 소모)'
       },
       {
         name: '검우',
@@ -45,7 +55,7 @@ export const OPERATORS = {
         hits: 1,
         isArts: true,
         effect: { type: 'stun', duration: 1 },
-        description: '모든 적에게 1.8배의 마법 피해를 입히고 1턴간 기절시킵니다.'
+        description: '모든 적에게 1.8배의 마법 피해를 입히고 1턴간 기절시킵니다. (SP 소모)'
       }
     ],
     avatarColor: 'from-amber-600 to-red-800'
@@ -64,13 +74,23 @@ export const OPERATORS = {
     },
     skills: [
       {
+        name: '일반 공격',
+        spReq: 0,
+        launchRanks: [2, 3],
+        targetRanks: [1, 2],
+        type: 'attack',
+        damageMult: 0.9,
+        hits: 1,
+        description: '적에게 약한 물리 공격을 합니다.'
+      },
+      {
         name: '신속한 배치',
         spReq: 8,
         launchRanks: [2, 3, 4],
-        targetRanks: [1, 2, 3, 4], // 자기 자신 또는 임의
+        targetRanks: [1, 2, 3, 4],
         type: 'sp_gen',
         effect: { type: 'gain_hope', value: 3 },
-        description: '아군에게 희망을 3 공급합니다.'
+        description: '아군에게 희망을 3 공급합니다. (SP 소모)'
       },
       {
         name: '치유의 날개',
@@ -81,7 +101,7 @@ export const OPERATORS = {
         healMult: 1.5,
         isAoe: true,
         effect: { type: 'gain_hope', value: 1 },
-        description: '모든 아군을 1.5배만큼 치유하고 희망을 1 얻습니다.'
+        description: '모든 아군을 1.5배만큼 치유하고 희망을 1 얻습니다. (SP 소모)'
       }
     ],
     avatarColor: 'from-amber-400 to-yellow-600'
@@ -100,18 +120,28 @@ export const OPERATORS = {
     },
     skills: [
       {
+        name: '원거리 참격',
+        spReq: 0,
+        launchRanks: [1, 2, 3],
+        targetRanks: [1, 2, 3],
+        type: 'attack',
+        damageMult: 1.0,
+        hits: 1,
+        description: 'Lord 특성을 활용해 비교적 원거리 열의 적까지 타격합니다.'
+      },
+      {
         name: '강력한 공격',
-        spReq: 5,
+        spReq: 2,
         launchRanks: [1, 2],
         targetRanks: [1, 2],
         type: 'attack',
         damageMult: 1.6,
         hits: 1,
-        description: '전방 적에게 1.6배의 강한 물리 공격을 합니다.'
+        description: '전방 적에게 1.6배의 강한 물리 공격을 합니다. (SP 소모)'
       },
       {
         name: '진은참',
-        spReq: 32,
+        spReq: 5,
         launchRanks: [1, 2, 3],
         targetRanks: [1, 2, 3, 4],
         isAoe: true,
@@ -119,7 +149,7 @@ export const OPERATORS = {
         damageMult: 2.2,
         hits: 1,
         effect: { type: 'self_debuff', stat: 'def', value: -40, duration: 2 },
-        description: '자신의 방어력이 40% 감소하지만 모든 적에게 2.2배의 참격을 날립니다.'
+        description: '자신의 방어력이 40% 감소하지만 모든 적에게 2.2배의 대참격을 날립니다. (SP 소모)'
       }
     ],
     avatarColor: 'from-slate-500 to-zinc-700'
@@ -138,18 +168,28 @@ export const OPERATORS = {
     },
     skills: [
       {
+        name: '톱질 공격',
+        spReq: 0,
+        launchRanks: [1, 2],
+        targetRanks: [1, 2],
+        type: 'attack',
+        damageMult: 1.0,
+        hits: 1,
+        description: '전방의 적에게 전기톱 회전 기계 물리 피해를 입칩니다.'
+      },
+      {
         name: '육체 재구성',
-        spReq: 10,
+        spReq: 2,
         launchRanks: [1, 2],
         targetRanks: [1, 2, 3, 4],
-        type: 'heal', // 자가 치유
+        type: 'heal',
         healMult: 1.2,
         effect: { type: 'self_buff', stat: 'def', value: 30, duration: 2 },
-        description: '자신의 체력을 1.2배 회복하고 2턴간 방어력을 30% 증가시킵니다.'
+        description: '체력이 공격력의 120% 만큼 회복하며 2턴간 방어력을 30% 증가시킵니다. (SP 소모)'
       },
       {
         name: '육체 분쇄',
-        spReq: 25,
+        spReq: 5,
         launchRanks: [1, 2],
         targetRanks: [1, 2, 3],
         isAoe: true,
@@ -157,7 +197,7 @@ export const OPERATORS = {
         damageMult: 2.0,
         hits: 1,
         effect: { type: 'immortality', duration: 2 },
-        description: '전방 3명의 적에게 2.0배의 공격을 가하며, 2턴간 체력이 1 이하로 내려가지 않는 불사 상태가 됩니다.'
+        description: '전방 3명의 적에게 2.0배 공격을 가하며 2턴간 불사 상태가 됩니다. (SP 소모)'
       }
     ],
     avatarColor: 'from-zinc-800 to-neutral-950'
@@ -176,24 +216,34 @@ export const OPERATORS = {
     },
     skills: [
       {
+        name: '방패 충격',
+        spReq: 0,
+        launchRanks: [1],
+        targetRanks: [1],
+        type: 'attack',
+        damageMult: 1.0,
+        hits: 1,
+        description: '최전방 방패 격돌로 적 1열을 때립니다.'
+      },
+      {
         name: '구급',
-        spReq: 7,
+        spReq: 3,
         launchRanks: [1, 2],
         targetRanks: [1, 2, 3, 4],
         type: 'heal',
         healMult: 1.6,
-        description: '가장 체력이 낮은 아군 한 명을 1.6배만큼 치유합니다.'
+        description: '가장 체력이 낮은 아군 한 명을 공격력의 1.6배만큼 치유합니다. (SP 소모)'
       },
       {
         name: '칼슘화',
-        spReq: 24,
+        spReq: 7,
         launchRanks: [1, 2, 3],
         targetRanks: [1, 2, 3, 4],
         isAoe: true,
         type: 'heal',
         healMult: 0.8,
         effect: { type: 'arts_vulnerability', value: 30, duration: 3 },
-        description: '모든 아군을 0.8배 치유하고 3턴간 모든 적이 입는 마법 피해를 30% 증가시킵니다.'
+        description: '모든 아군을 공격력의 80%만큼 치유하고 3턴간 모든 적이 입는 마법 피해를 30% 증가시킵니다. (SP 소모)'
       }
     ],
     avatarColor: 'from-slate-300 to-zinc-500'
@@ -212,24 +262,34 @@ export const OPERATORS = {
     },
     skills: [
       {
+        name: '단사',
+        spReq: 0,
+        launchRanks: [3, 4],
+        targetRanks: [1, 2, 3, 4],
+        type: 'attack',
+        damageMult: 1.0,
+        hits: 1,
+        description: '지정된 임의의 적에게 1배의 물리 공격을 사격합니다.'
+      },
+      {
         name: '부하 사격',
-        spReq: 6,
+        spReq: 2,
         launchRanks: [3, 4],
         targetRanks: [1, 2, 3, 4],
         type: 'attack',
         damageMult: 0.7,
         hits: 3,
-        description: '지정된 적에게 0.7배의 위력으로 3번 연속 공격합니다.'
+        description: '지정된 적에게 0.7배의 위력으로 3번 연속 공격합니다. (SP 소모)'
       },
       {
         name: '과부하 모드',
-        spReq: 18,
+        spReq: 4,
         launchRanks: [3, 4],
         targetRanks: [1, 2, 3, 4],
         type: 'attack',
         damageMult: 0.75,
         hits: 5,
-        description: '지정된 적에게 0.75배의 위력으로 무려 5번 연속 난사합니다.'
+        description: '지정된 적에게 0.75배의 위력으로 5번 연속 난사합니다. (SP 소모)'
       }
     ],
     avatarColor: 'from-red-600 to-red-900'
@@ -248,6 +308,17 @@ export const OPERATORS = {
     },
     skills: [
       {
+        name: '마력 투사',
+        spReq: 0,
+        launchRanks: [3, 4],
+        targetRanks: [1, 2, 3, 4],
+        type: 'attack',
+        damageMult: 1.0,
+        hits: 1,
+        isArts: true,
+        description: '적에게 기초 마법 Arts 피해를 입힙니다.'
+      },
+      {
         name: '점화',
         spReq: 6,
         launchRanks: [3, 4],
@@ -257,11 +328,11 @@ export const OPERATORS = {
         hits: 1,
         isArts: true,
         effect: { type: 'splash_magic_def_shred', value: 20 },
-        description: '마법 공격으로 1.5배의 피해를 입히고 주변 적에게 0.7배 폭발 피해 및 마법 저항을 깎습니다.'
+        description: '마법 공격으로 1.5배 피해 및 주변 적에게 스플래시 저항 감소를 줍니다. (SP 소모)'
       },
       {
         name: '화산',
-        spReq: 28,
+        spReq: 6,
         launchRanks: [2, 3, 4],
         targetRanks: [1, 2, 3, 4],
         isAoe: true,
@@ -269,7 +340,7 @@ export const OPERATORS = {
         damageMult: 2.3,
         hits: 1,
         isArts: true,
-        description: '화산을 분출해 모든 적에게 2.3배의 광역 마법 피해를 입힙니다.'
+        description: '화산을 분출해 모든 적에게 2.3배의 광역 마법 피해를 입힙니다. (SP 소모)'
       }
     ],
     avatarColor: 'from-rose-400 to-orange-700'
@@ -288,25 +359,34 @@ export const OPERATORS = {
     },
     skills: [
       {
+        name: '일반 치유',
+        spReq: 0,
+        launchRanks: [3, 4],
+        targetRanks: [1, 2, 3, 4],
+        type: 'heal',
+        healMult: 1.0,
+        description: '사거리 내 아군 한 명의 체력을 표준 치유합니다.'
+      },
+      {
         name: '신조',
-        spReq: 8,
+        spReq: 2,
         launchRanks: [3, 4],
         targetRanks: [1, 2, 3, 4],
         type: 'heal',
         healMult: 1.5,
         effect: { type: 'buff_def', value: 40, duration: 2 },
-        description: '아군을 1.5배 치유하고 2턴간 대상의 방어력을 40% 증가시킵니다.'
+        description: '아군을 1.5배 치유하고 2턴간 대상의 방어력을 40% 증가시킵니다. (SP 소모)'
       },
       {
         name: '신조의 결계',
-        spReq: 22,
+        spReq: 5,
         launchRanks: [3, 4],
         targetRanks: [1, 2, 3, 4],
         isAoe: true,
         type: 'heal',
         healMult: 1.0,
         effect: { type: 'global_def_sanity', value: 30, sanity: 15, duration: 3 },
-        description: '모든 아군을 1.0배 치유하며 방어력을 30% 높이고 정신력을 15 즉시 회복시킵니다.'
+        description: '모든 아군을 1.0배 치유하며 방어력을 30% 높이고 정신력을 15 즉시 회복시킵니다. (SP 소모)'
       }
     ],
     avatarColor: 'from-slate-100 to-stone-400'
@@ -373,7 +453,7 @@ export const ENEMIES = {
       {
         name: '오리지늄 번개',
         launchRanks: [2, 3, 4],
-        targetRanks: [3, 4], // 후방 저격
+        targetRanks: [3, 4],
         damageMult: 1.1,
         isArts: true,
         effect: { type: 'sanity_drain', value: 10 },
@@ -381,7 +461,6 @@ export const ENEMIES = {
       }
     ]
   },
-  // 보스 몬스터들
   boss_crownslayer: {
     name: '크라운슬레이어 (1층 보스)',
     maxHp: 4000,
@@ -393,7 +472,7 @@ export const ENEMIES = {
       {
         name: '그림자 돌진',
         launchRanks: [1, 2, 3, 4],
-        targetRanks: [3, 4], // 전선 우회!
+        targetRanks: [3, 4],
         damageMult: 1.4,
         description: '전선을 뛰어넘어 후방 아군에게 치명적인 물리 공격을 가합니다.'
       },

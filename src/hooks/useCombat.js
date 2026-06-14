@@ -10,7 +10,6 @@ export const useCombat = () => {
   const relics = useSelector(state => state.run.relics);
   const metaBuffs = useSelector(state => state.run.metaBuffs) || {};
 
-  // 최신 상태를 항상 참조하기 위한 Ref 바인딩 (Stale Closure 방지 핵심)
   const combatRef = useRef(combat);
   useEffect(() => {
     combatRef.current = combat;
@@ -21,7 +20,6 @@ export const useCombat = () => {
     relicsRef.current = relics;
   }, [relics]);
 
-  // 상호 참조 순환 의존성 해결을 위한 함수 Refs
   const executeSkillRef = useRef();
   const proceedTurnRef = useRef();
   const executeEnemyAiRef = useRef();
@@ -34,7 +32,7 @@ export const useCombat = () => {
     };
   }, []);
 
-  // 턴 큐(Timeline) 생성 함수
+  // 턴 큐(Timeline) 생성 함수 - 생존 중인 유닛만 생성
   const generateTurnQueue = useCallback((combatState) => {
     const queue = [];
     
@@ -43,7 +41,6 @@ export const useCombat = () => {
       if (op && op.hp > 0) {
         const roll = Math.floor(Math.random() * 8) + 1;
         
-        // 소장품 보너스 속도 적용 (스나이퍼)
         let sniperSpdBonus = 0;
         if (op.class === '스나이퍼' && relicsRef.current.some(r => r.id === 'sniper_glove')) {
           sniperSpdBonus = 3;
@@ -156,7 +153,7 @@ export const useCombat = () => {
     return null;
   }, []);
 
-  // 1. 스킬 실행 함수 Ref 구현
+  // 1. 스킬 실행 함수
   executeSkillRef.current = (skill, casterIndex, targetIndex, isCasterEnemy) => {
     const currentCombat = combatRef.current;
     if (!currentCombat) return;
@@ -192,7 +189,8 @@ export const useCombat = () => {
 
     if (!isCasterEnemy) {
       const realOp = nextCombat.party[casterIndex];
-      if (realOp.sp >= skill.spReq) {
+      const requiresSp = skill.spReq > 0;
+      if (requiresSp && realOp.sp >= skill.spReq) {
         realOp.sp = 0;
         logMessages.push(`🔥 [${caster.name}] 시그니처 스킬 [${skill.name}] 발동!`);
       } else {
@@ -226,6 +224,13 @@ export const useCombat = () => {
         if (!isCasterEnemy && skill.effect && skill.effect.sanity) {
           unit.sanity = Math.min(100, unit.sanity + skill.effect.sanity);
           logMessages.push(`${unit.name}의 정신력이 ${skill.effect.sanity} 회복되었습니다.`);
+        }
+
+        // 힐 결과 상태 저장
+        if (!isCasterEnemy) {
+          nextCombat.party[idx] = unit;
+        } else {
+          nextCombat.enemies[idx] = unit;
         }
       } else {
         const evasion = unit.stats?.eva || unit.eva || 0;
@@ -279,7 +284,8 @@ export const useCombat = () => {
           logMessages.push(`💥 [${unit.name}]이(가) ${finalDmg}의 피해를 입었습니다! (HP: ${unit.hp}/${unit.maxHp})`);
         }
 
-        if (!isCasterEnemy) {
+        if (isCasterEnemy) {
+          // 적이 아군(오퍼레이터)을 공격한 경우 -> 정신력 적용 및 아군 파티 배열에 저장
           let sanityDmg = 4;
           if (skill.effect && skill.effect.sanity_drain) {
             sanityDmg = skill.effect.sanity_drain;
@@ -288,6 +294,9 @@ export const useCombat = () => {
           }
           const updatedOp = applySanityDamage(unit, sanityDmg, logMessages);
           nextCombat.party[idx] = updatedOp;
+        } else {
+          // 아군이 적을 공격한 경우 -> 적 배열에 저장 (정신력 연산 패스)
+          nextCombat.enemies[idx] = unit;
         }
 
         if (skill.effect) {
@@ -344,21 +353,10 @@ export const useCombat = () => {
     proceedTurnRef.current(nextCombat);
   };
 
-  // 2. 턴 진행 처리 함수 Ref 구현
+  // 2. 턴 진행 처리 함수
   proceedTurnRef.current = (currentCombat) => {
     let nextCombat = { ...currentCombat };
     
-    // 사망한 유닛 제거 및 턴 큐 정제
-    nextCombat.turnQueue = nextCombat.turnQueue.filter(unit => {
-      if (unit.isEnemy) {
-        const en = nextCombat.enemies[unit.enemyIndex];
-        return en && en.hp > 0;
-      } else {
-        const op = nextCombat.party[unit.partyIndex];
-        return op && op.hp > 0;
-      }
-    });
-
     const outcome = checkCombatOutcome(nextCombat);
     if (outcome === 'victory') {
       nextCombat.phase = 'victory';
@@ -399,6 +397,7 @@ export const useCombat = () => {
       return;
     }
 
+    // 다음 차례 이동
     let nextIdx = nextCombat.currentTurnIndex + 1;
     if (nextIdx >= nextCombat.turnQueue.length) {
       const roundResetCombat = startNextRound(nextCombat);
@@ -406,9 +405,21 @@ export const useCombat = () => {
       return;
     }
 
+    // 턴 인덱스 적용 및 유닛 추출
     nextCombat.currentTurnIndex = nextIdx;
     const nextUnit = nextCombat.turnQueue[nextIdx];
     
+    // 대상 생존 여부 체크 (사망 유닛 턴 스킵 처리)
+    const isUnitAlive = nextUnit.isEnemy 
+      ? (nextCombat.enemies[nextUnit.enemyIndex]?.hp > 0)
+      : (nextCombat.party[nextUnit.partyIndex]?.hp > 0);
+
+    if (!isUnitAlive) {
+      // 사망한 경우 즉시 다음 인덱스로 턴 넘김 (재귀)
+      proceedTurnRef.current(nextCombat);
+      return;
+    }
+
     if (nextUnit.isEnemy) {
       const en = nextCombat.enemies[nextUnit.enemyIndex];
       
@@ -428,11 +439,6 @@ export const useCombat = () => {
       nextCombat.phase = 'enemy_turn';
       nextCombat = addLog(nextCombat, `[${en.name}]의 차례입니다.`);
       dispatch(updateCombatState(nextCombat));
-      
-      // 적 AI 자동 공격 실행 (Ref를 거쳐 1.2초 후의 최신 상태에서 동작하도록 유도)
-      setTimeout(() => {
-        executeEnemyAiRef.current(nextUnit.enemyIndex);
-      }, 1200);
 
     } else {
       const op = nextCombat.party[nextUnit.partyIndex];
@@ -460,7 +466,7 @@ export const useCombat = () => {
     }
   };
 
-  // 3. 적 AI 동작 함수 Ref 구현
+  // 3. 적 AI 동작 함수
   executeEnemyAiRef.current = (enemyIdx) => {
     const currentCombat = combatRef.current;
     if (!currentCombat) return;
@@ -503,6 +509,9 @@ export const useCombat = () => {
     }, []),
     proceedTurn: useCallback((currentCombat) => {
       proceedTurnRef.current(currentCombat);
+    }, []),
+    executeEnemyAi: useCallback((enemyIdx) => {
+      executeEnemyAiRef.current(enemyIdx);
     }, []),
     validateSkillRange
   };
