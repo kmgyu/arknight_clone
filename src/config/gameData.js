@@ -20,7 +20,8 @@ export const OPERATORS = {
       atk: 320,
       def: 100,
       spd: 7,
-      eva: 10
+      eva: 10,
+      elemRes: 10
     },
     skills: [
       {
@@ -54,6 +55,8 @@ export const OPERATORS = {
         damageMult: 1.8,
         hits: 1,
         isArts: true,
+        elementalDmg: 200,
+        artsType: 'electric',
         effect: { type: 'stun', duration: 1 },
         description: '모든 적에게 1.8배의 마법 피해를 입히고 1턴간 기절시킵니다. (SP 소모)'
       }
@@ -70,7 +73,8 @@ export const OPERATORS = {
       atk: 240,
       def: 80,
       spd: 6,
-      eva: 5
+      eva: 5,
+      elemRes: 0
     },
     skills: [
       {
@@ -116,7 +120,8 @@ export const OPERATORS = {
       atk: 420,
       def: 140,
       spd: 5,
-      eva: 5
+      eva: 5,
+      elemRes: 15
     },
     skills: [
       {
@@ -164,7 +169,8 @@ export const OPERATORS = {
       atk: 380,
       def: 110,
       spd: 4,
-      eva: 5
+      eva: 5,
+      elemRes: 5
     },
     skills: [
       {
@@ -212,7 +218,8 @@ export const OPERATORS = {
       atk: 280,
       def: 220,
       spd: 3,
-      eva: 0
+      eva: 0,
+      elemRes: 20
     },
     skills: [
       {
@@ -258,7 +265,8 @@ export const OPERATORS = {
       atk: 340,
       def: 90,
       spd: 9,
-      eva: 15
+      eva: 15,
+      elemRes: 5
     },
     skills: [
       {
@@ -304,7 +312,8 @@ export const OPERATORS = {
       atk: 400,
       def: 95,
       spd: 4,
-      eva: 5
+      eva: 5,
+      elemRes: 25
     },
     skills: [
       {
@@ -340,6 +349,8 @@ export const OPERATORS = {
         damageMult: 2.3,
         hits: 1,
         isArts: true,
+        elementalDmg: 350,
+        artsType: 'burn',
         description: '화산을 분출해 모든 적에게 2.3배의 광역 마법 피해를 입힙니다. (SP 소모)'
       }
     ],
@@ -355,7 +366,8 @@ export const OPERATORS = {
       atk: 310,
       def: 120,
       spd: 5,
-      eva: 5
+      eva: 5,
+      elemRes: 20
     },
     skills: [
       {
@@ -400,6 +412,7 @@ export const ENEMIES = {
     atk: 100,
     def: 50,
     spd: 4,
+    elemRes: 0,
     skills: [
       {
         name: '물리 베기',
@@ -416,6 +429,7 @@ export const ENEMIES = {
     atk: 80,
     def: 20,
     spd: 8,
+    elemRes: 0,
     skills: [
       {
         name: '물어뜯기',
@@ -432,6 +446,7 @@ export const ENEMIES = {
     atk: 160,
     def: 250,
     spd: 2,
+    elemRes: 10,
     skills: [
       {
         name: '방패 밀치기',
@@ -449,6 +464,7 @@ export const ENEMIES = {
     atk: 140,
     def: 60,
     spd: 5,
+    elemRes: 30,
     skills: [
       {
         name: '오리지늄 번개',
@@ -456,6 +472,8 @@ export const ENEMIES = {
         targetRanks: [3, 4],
         damageMult: 1.1,
         isArts: true,
+        elementalDmg: 150,
+        artsType: 'psychic_languish',
         effect: { type: 'sanity_drain', value: 10 },
         description: '후방 아군을 마법으로 타격하고 정신력(Sanity)을 10 갉아먹습니다.'
       }
@@ -467,6 +485,7 @@ export const ENEMIES = {
     atk: 220,
     def: 120,
     spd: 10,
+    elemRes: 20,
     isBoss: true,
     skills: [
       {
@@ -493,6 +512,7 @@ export const ENEMIES = {
     atk: 400,
     def: 450,
     spd: 3,
+    elemRes: 40,
     isBoss: true,
     skills: [
       {
@@ -508,6 +528,8 @@ export const ENEMIES = {
         targetRanks: [1, 2, 3, 4],
         isAoe: true,
         damageMult: 1.2,
+        elementalDmg: 250,
+        artsType: 'psychic_nervous',
         effect: { type: 'sanity_strike', value: 25 },
         description: '모든 오퍼레이터에게 충격을 주어 1.2배 피해를 입히고 정신력을 25씩 깎습니다.'
       }

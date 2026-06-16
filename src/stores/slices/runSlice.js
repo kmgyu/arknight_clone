@@ -218,7 +218,12 @@ const runSlice = createSlice({
             combatAffliction: null,
             combatShield: 0,
             tempDefenseMult: 1.0,
-            tempDamageMult: 1.0
+            tempDamageMult: 1.0,
+            elementalHp: 1000,
+            maxElementalHp: 1000,
+            elementalResist: op.stats?.elemRes !== undefined ? op.stats.elemRes : (op.baseStats?.elemRes || 0),
+            statusEffects: [],
+            elementalBurst: null
           };
         }
         return null;
@@ -232,7 +237,11 @@ const runSlice = createSlice({
           hp: template.maxHp,
           maxHp: template.maxHp,
           sp: 0,
-          statusEffects: []
+          elementalHp: 1000,
+          maxElementalHp: 1000,
+          elementalResist: template.elemRes !== undefined ? template.elemRes : 0,
+          statusEffects: [],
+          elementalBurst: null
         };
       });
       

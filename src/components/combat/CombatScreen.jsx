@@ -54,6 +54,13 @@ const CombatScreen = () => {
   const handleSkillClick = (skill) => {
     if (!isPlayerTurn || !activeOperator) return;
 
+    // 전율 상태이상 검증
+    const hasTremble = activeOperator.statusEffects?.some(e => e.type === 'tremble');
+    if (hasTremble && skill.type === 'attack') {
+      alert('전율 상태이상으로 인해 공격 타입 스킬을 사용할 수 없습니다!');
+      return;
+    }
+
     // SP 조건 검증
     const requiresSp = skill.spReq > 0;
     if (requiresSp && activeOperator.sp < skill.spReq) {
@@ -228,9 +235,11 @@ const CombatScreen = () => {
               {/* 중단: 스킬 리스트 (3스킬 대응) */}
               <div className="grid grid-cols-3 gap-2 my-2">
                 {activeOperatorSkills.map((skill, sIdx) => {
+                  const hasTremble = activeOperator.statusEffects?.some(e => e.type === 'tremble');
+                  const isBlockedByTremble = hasTremble && skill.type === 'attack';
                   const requiresSp = skill.spReq > 0;
                   const isCharged = activeOperator.sp >= skill.spReq;
-                  const canUse = !requiresSp || isCharged;
+                  const canUse = (!requiresSp || isCharged) && !isBlockedByTremble;
                   const isSelected = selectedSkill?.name === skill.name;
 
                   const launchRanksStr = skill.launchRanks.join(',');
@@ -253,7 +262,11 @@ const CombatScreen = () => {
                     >
                       <div className="flex justify-between items-center w-full">
                         <span className="text-[11px] font-black truncate pr-1">{skill.name}</span>
-                        {requiresSp && (
+                        {isBlockedByTremble ? (
+                          <span className="text-[8px] px-1 rounded font-bold bg-red-950 text-red-400 border border-red-900 leading-normal animate-pulse">
+                            전율 봉쇄
+                          </span>
+                        ) : requiresSp && (
                           <span className={`text-[8.5px] px-1 rounded font-mono ${
                             isSelected ? 'bg-slate-900 text-amber-400' : 'bg-amber-600 text-slate-950 font-bold'
                           }`}>
